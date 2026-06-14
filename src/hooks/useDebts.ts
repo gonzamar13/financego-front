@@ -7,6 +7,8 @@ import type {
   DebtPaymentCreate,
   DebtSummary,
   DebtUpdate,
+  PayoffRequest,
+  PayoffResponse,
 } from "@/types/api";
 
 const KEY = ["debts"] as const;
@@ -78,6 +80,13 @@ export function useCreatePayment() {
     }) =>
       (await api.post<DebtPayment>(`/debts/${debtId}/payments`, data)).data,
     onSuccess: () => invalidateAll(qc),
+  });
+}
+
+export function usePayoffPlan() {
+  return useMutation({
+    mutationFn: async (data: PayoffRequest) =>
+      (await api.post<PayoffResponse>("/debts/payoff-plan", data)).data,
   });
 }
 

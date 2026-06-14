@@ -16,6 +16,7 @@ import { TransactionsPage } from "@/pages/TransactionsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { DebtsPage } from "@/pages/DebtsPage";
 import { BudgetsPage } from "@/pages/BudgetsPage";
+import { PayoffPage } from "@/pages/PayoffPage";
 
 function ToastHost() {
   const { resolved } = useTheme();
@@ -52,6 +53,7 @@ export default function App() {
                 <Route path="/accounts" element={<AccountsPage />} />
                 <Route path="/budgets" element={<BudgetsPage />} />
                 <Route path="/debts" element={<DebtsPage />} />
+                <Route path="/debts/payoff" element={<PayoffPage />} />
                 <Route path="/categories" element={<CategoriesPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>

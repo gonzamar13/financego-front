@@ -214,3 +214,37 @@ export interface BudgetAlert {
   status: "warning" | "exceeded";
   message: string;
 }
+
+// --- Módulo 2 frontend: Proyección de pago de deudas ---
+
+export type StrategyType = "snowball" | "avalanche";
+
+export interface PayoffRequest {
+  monthly_budget?: number | null;
+  strategy?: StrategyType;
+}
+
+export interface MonthSnapshot {
+  month: number;
+  date: string;
+  total_remaining: string;
+}
+
+export interface DebtPayoffDetail {
+  debt_id: string;
+  name: string;
+  paid_off_month: number | null;
+  paid_off_date: string | null;
+  total_interest: string;
+}
+
+export interface PayoffResponse {
+  feasible: boolean;
+  suggested_budget: string;
+  monthly_budget: string;
+  months: MonthSnapshot[];
+  debts: DebtPayoffDetail[];
+  debt_free_date: string | null;
+  total_interest: string;
+  total_months: number;
+}

@@ -11,6 +11,7 @@ import {
   Monitor,
   CreditCard,
   PiggyBank,
+  TrendingDown,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { Avatar } from "@/components/ui/Avatar";
@@ -27,6 +28,7 @@ const nav = [
   { to: "/accounts", label: "Cuentas", icon: Wallet },
   { to: "/budgets", label: "Presupuestos", icon: PiggyBank },
   { to: "/debts", label: "Deudas", icon: CreditCard },
+  { to: "/debts/payoff", label: "Plan de pago", icon: TrendingDown },
   { to: "/categories", label: "Categorías", icon: Tags },
   { to: "/settings", label: "Ajustes", icon: Settings },
 ];
