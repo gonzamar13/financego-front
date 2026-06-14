@@ -12,7 +12,7 @@ import { getApiErrorMessage } from "@/lib/api";
 
 const schema = z.object({
   email: z.string().email("Email inválido"),
-  password: z.string().min(6, "Mínimo 6 caracteres"),
+  password: z.string().min(8, "Mínimo 8 caracteres"),
 });
 type FormValues = z.infer<typeof schema>;
 

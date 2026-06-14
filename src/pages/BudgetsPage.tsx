@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageSpinner } from "@/components/ui/Spinner";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatPercent } from "@/lib/format";
 import { getApiErrorMessage } from "@/lib/api";
 import {
   useBudgetAlerts,
@@ -307,7 +307,7 @@ function BudgetCard({
         </p>
         <ProgressBar value={budget.progress_percent} tone={tone} className="mt-3" />
         <div className="mt-2 flex items-center justify-between text-xs">
-          <span className="text-fg-muted">{budget.progress_percent.toFixed(0)}%</span>
+          <span className="text-fg-muted">{formatPercent(budget.progress_percent)}</span>
           <span
             className={
               Number(budget.remaining) < 0 ? "font-medium text-danger" : "font-medium text-fg-muted"

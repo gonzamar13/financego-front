@@ -9,7 +9,7 @@ export function formatCurrency(
     style: "currency",
     currency,
     notation: compact ? "compact" : "standard",
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 0,
   }).format(num);
 }
 
@@ -20,8 +20,8 @@ export function formatNumber(value: number, locale = "es-PY") {
 export function formatPercent(value: number, locale = "es-PY") {
   return new Intl.NumberFormat(locale, {
     style: "percent",
-    maximumFractionDigits: 1,
-  }).format(value);
+    maximumFractionDigits: 0,
+  }).format(value / 100);
 }
 
 export function initials(first?: string, last?: string) {

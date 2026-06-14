@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageSpinner } from "@/components/ui/Spinner";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatPercent } from "@/lib/format";
 import { getApiErrorMessage } from "@/lib/api";
 import {
   useCreateDebt,
@@ -295,7 +295,7 @@ function DebtCard({
         </p>
         <ProgressBar value={debt.progress_percent} tone={progressTone} className="mt-3" />
         <div className="mt-3 flex items-center justify-between text-xs text-fg-muted">
-          <span>{debt.progress_percent.toFixed(0)}% pagado</span>
+          <span>{formatPercent(debt.progress_percent)} pagado</span>
           {debt.total_installments && (
             <span>
               {debt.installments_paid}/{debt.total_installments} cuotas

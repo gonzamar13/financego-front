@@ -30,7 +30,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageSpinner } from "@/components/ui/Spinner";
 import { Avatar } from "@/components/ui/Avatar";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatPercent } from "@/lib/format";
 import {
   useAccountBalances,
   useCategorySummary,
@@ -172,7 +172,7 @@ export function DashboardPage() {
                             a.status === "exceeded" ? "text-danger" : "text-warning"
                           }
                         >
-                          {a.progress_percent.toFixed(0)}% ·{" "}
+                          {formatPercent(a.progress_percent)} ·{" "}
                           {formatCurrency(a.spent)} / {formatCurrency(a.amount)}
                         </span>
                       </div>
@@ -215,8 +215,8 @@ export function DashboardPage() {
                       }}
                       formatter={(v: number) => formatCurrency(v)}
                     />
-                    <Bar dataKey="income" name="Ingresos" fill="#22c55e" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey="expense" name="Gastos" fill="#ef4444" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="income" name="Ingresos" fill="#16a34a" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="expense" name="Gastos" fill="#dc2626" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
