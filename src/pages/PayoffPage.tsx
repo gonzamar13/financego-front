@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
+  ArrowLeftRight,
   CalendarCheck,
   CheckCircle2,
   Clock,
+  Loader2,
   TrendingDown,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
@@ -19,25 +21,66 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/format";
 import { CurrencyInput } from "@/components/ui/CurrencyInput";
 import { getApiErrorMessage } from "@/lib/api";
+import { cn } from "@/lib/cn";
 import { usePayoffPlan } from "@/hooks/useDebts";
-import type { PayoffResponse, StrategyType } from "@/types/api";
+import type { PayoffRequest, PayoffResponse, StrategyType } from "@/types/api";
 
 const STRATEGY_OPTIONS = [
   { value: "avalanche", label: "Avalancha — minimiza el interés total" },
   { value: "snowball", label: "Bola de nieve — salda deudas pequeñas primero" },
 ];
 
+const STRATEGY_LABEL: Record<StrategyType, string> = {
+  avalanche: "Avalancha",
+  snowball: "Bola de nieve",
+};
+
+const BUDGET_KEY = "financego.payoff_budget";
+
 export function PayoffPage() {
-  const [budget, setBudget] = useState("");
+  const [budget, setBudget] = useState(() => localStorage.getItem(BUDGET_KEY) ?? "");
   const [strategy, setStrategy] = useState<StrategyType>("avalanche");
   const payoff = usePayoffPlan();
+  const comparison = usePayoffPlan();
+  const initialized = useRef(false);
+
   const result: PayoffResponse | undefined = payoff.data;
+  const compResult: PayoffResponse | undefined = comparison.data;
+  const altStrategy: StrategyType = strategy === "avalanche" ? "snowball" : "avalanche";
+  const isPending = payoff.isPending || comparison.isPending;
+
+  // Auto-trigger: inmediato en mount, debounce 500ms en cambios posteriores
+  useEffect(() => {
+    const alt: StrategyType = strategy === "avalanche" ? "snowball" : "avalanche";
+    const req: PayoffRequest = {
+      monthly_budget: budget ? Number(budget) : undefined,
+      strategy,
+    };
+    const delay = initialized.current ? 500 : 0;
+    initialized.current = true;
+
+    const timer = setTimeout(() => {
+      payoff.mutate(req, { onError: (e) => toast.error(getApiErrorMessage(e)) });
+      comparison.mutate(
+        { ...req, strategy: alt },
+        { onError: (e) => toast.error(getApiErrorMessage(e)) }
+      );
+    }, delay);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [budget, strategy]);
+
+  const handleBudgetChange = (raw: string) => {
+    setBudget(raw);
+    if (raw) localStorage.setItem(BUDGET_KEY, raw);
+    else localStorage.removeItem(BUDGET_KEY);
+  };
 
   const chartData = useMemo(() => {
     if (!result) return [];
@@ -51,27 +94,25 @@ export function PayoffPage() {
       }));
   }, [result]);
 
-  const handleSubmit = async () => {
-    try {
-      await payoff.mutateAsync({
-        monthly_budget: budget ? Number(budget) : undefined,
-        strategy,
-      });
-    } catch (e) {
-      toast.error(getApiErrorMessage(e));
-    }
-  };
-
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-fg">Proyección de pago de deudas</h1>
-        <p className="text-sm text-fg-muted mt-1">
-          Simulá cuándo quedarás libre de deudas según tu presupuesto mensual.
-        </p>
+      {/* Encabezado */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-fg">Proyección de pago de deudas</h1>
+          <p className="text-sm text-fg-muted mt-1">
+            Simulá cuándo quedarás libre de deudas según tu presupuesto mensual.
+          </p>
+        </div>
+        {isPending && (
+          <div className="flex items-center gap-1.5 text-sm text-fg-muted shrink-0 mt-1">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Calculando…
+          </div>
+        )}
       </div>
 
-      {/* Formulario */}
+      {/* Configuración — sin botón, reactivo */}
       <Card>
         <CardHeader
           title="Configurar simulación"
@@ -83,7 +124,7 @@ export function PayoffPage() {
               <CurrencyInput
                 label="Presupuesto mensual (opcional)"
                 value={budget}
-                onChange={(raw) => setBudget(raw)}
+                onChange={handleBudgetChange}
                 placeholder="Ej: 500000"
                 hint={
                   result
@@ -101,13 +142,6 @@ export function PayoffPage() {
               />
             </div>
           </div>
-          <Button
-            className="mt-4"
-            loading={payoff.isPending}
-            onClick={handleSubmit}
-          >
-            Calcular plan
-          </Button>
         </CardBody>
       </Card>
 
@@ -171,6 +205,16 @@ export function PayoffPage() {
               icon={<Clock className="h-4 w-4" />}
             />
           </div>
+
+          {/* Comparación de estrategias */}
+          {compResult && (
+            <StrategyComparison
+              current={result}
+              currentStrategy={strategy}
+              alt={compResult}
+              altStrategy={altStrategy}
+            />
+          )}
 
           {/* Gráfico de evolución */}
           <Card>
@@ -263,6 +307,8 @@ export function PayoffPage() {
   );
 }
 
+// ─── Componentes auxiliares ───────────────────────────────────────────────────
+
 function SummaryCard({
   label,
   value,
@@ -285,12 +331,106 @@ function SummaryCard({
       <div className="p-5">
         <div className="flex items-center justify-between">
           <p className="text-sm text-fg-muted">{label}</p>
-          <Badge tone={tone === "warning" ? "warning" : tone === "success" ? "success" : tone === "danger" ? "danger" : "brand"}>
+          <Badge
+            tone={
+              tone === "warning"
+                ? "warning"
+                : tone === "success"
+                ? "success"
+                : tone === "danger"
+                ? "danger"
+                : "brand"
+            }
+          >
             {icon}
           </Badge>
         </div>
         <p className="mt-2 text-xl font-bold text-fg">{value}</p>
       </div>
+    </Card>
+  );
+}
+
+function StrategyComparison({
+  current,
+  currentStrategy,
+  alt,
+  altStrategy,
+}: {
+  current: PayoffResponse;
+  currentStrategy: StrategyType;
+  alt: PayoffResponse;
+  altStrategy: StrategyType;
+}) {
+  const currentInterest = Number(current.total_interest);
+  const altInterest = Number(alt.total_interest);
+  const saving = Math.abs(altInterest - currentInterest);
+  const currentIsBetter = currentInterest <= altInterest;
+  const betterStrategy = currentIsBetter ? currentStrategy : altStrategy;
+  const monthDiff = Math.abs(current.total_months - alt.total_months);
+
+  const rows = [
+    { s: currentStrategy, res: current, isCurrent: true },
+    { s: altStrategy, res: alt, isCurrent: false },
+  ];
+
+  return (
+    <Card>
+      <CardHeader
+        title="Comparación de estrategias"
+        subtitle="Mismo presupuesto, dos enfoques — elegí el que más te conviene."
+      />
+      <CardBody>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          {rows.map(({ s, res, isCurrent }) => (
+            <div
+              key={s}
+              className={cn(
+                "rounded-xl border p-4",
+                isCurrent
+                  ? "border-brand-300 bg-brand-50/50 dark:border-brand-500/30 dark:bg-brand-500/5"
+                  : "border-border bg-bg-subtle"
+              )}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-fg">{STRATEGY_LABEL[s]}</span>
+                {isCurrent && <Badge tone="brand">Activa</Badge>}
+              </div>
+              <p className="text-xl font-bold text-fg">{formatCurrency(res.total_interest)}</p>
+              <p className="text-xs text-fg-muted mb-1">en intereses</p>
+              <p className="text-sm text-fg-muted">
+                {res.debt_free_date
+                  ? format(parseISO(res.debt_free_date), "MMMM yyyy", { locale: es })
+                  : "—"}
+                {" · "}
+                {res.feasible ? `${res.total_months} meses` : "+600 meses"}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {saving > 0 && (
+          <div className="rounded-lg bg-success-soft/60 dark:bg-success/10 px-4 py-2.5 flex items-start gap-2 text-sm">
+            <ArrowLeftRight className="h-4 w-4 text-success shrink-0 mt-0.5" />
+            <p className="text-fg-muted">
+              <span className="font-semibold text-fg">{STRATEGY_LABEL[betterStrategy]}</span>{" "}
+              te ahorra{" "}
+              <span className="font-semibold text-fg">{formatCurrency(saving)}</span>{" "}
+              en intereses
+              {monthDiff > 0 && (
+                <>
+                  {" "}y termina{" "}
+                  <span className="font-semibold text-fg">
+                    {monthDiff} {monthDiff === 1 ? "mes" : "meses"}
+                  </span>{" "}
+                  antes
+                </>
+              )}
+              .
+            </p>
+          </div>
+        )}
+      </CardBody>
     </Card>
   );
 }
