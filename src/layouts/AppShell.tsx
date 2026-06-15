@@ -1,8 +1,10 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Wallet,
   ArrowLeftRight,
+  ArrowDownRight,
+  ArrowUpRight,
   Tags,
   Settings,
   LogOut,
@@ -11,6 +13,7 @@ import {
   Monitor,
   CreditCard,
   PiggyBank,
+  Plus,
   TrendingDown,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
@@ -57,7 +60,11 @@ function ThemeToggle() {
 export function AppShell() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
+
+  const isOnTransactions = location.pathname === "/transactions";
 
   return (
     <div className="min-h-full bg-bg flex">
@@ -190,6 +197,76 @@ export function AppShell() {
             <Outlet />
           </div>
         </main>
+
+        {/* Speed Dial FAB — visible en todas las páginas menos /transactions */}
+        {!isOnTransactions && (
+          <>
+            {fabOpen && (
+              <div
+                className="fixed inset-0 z-40 lg:hidden"
+                onClick={() => setFabOpen(false)}
+                aria-hidden="true"
+              />
+            )}
+            <div className="fixed bottom-20 right-4 z-50 lg:hidden flex flex-col-reverse items-end gap-3">
+              <button
+                onClick={() => setFabOpen((v) => !v)}
+                className={cn(
+                  "h-14 w-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300",
+                  "bg-brand-600 text-white hover:bg-brand-700 active:scale-95"
+                )}
+                aria-label={fabOpen ? "Cerrar" : "Nuevo movimiento"}
+              >
+                <Plus
+                  className={cn(
+                    "h-6 w-6 transition-transform duration-300",
+                    fabOpen && "rotate-45"
+                  )}
+                />
+              </button>
+              <div
+                className={cn(
+                  "flex items-center gap-3 transition-all duration-200",
+                  fabOpen
+                    ? "translate-y-0 opacity-100 pointer-events-auto"
+                    : "translate-y-6 opacity-0 pointer-events-none"
+                )}
+                style={{ transitionDelay: fabOpen ? "30ms" : "0ms" }}
+              >
+                <span className="rounded-lg bg-surface border border-border px-2.5 py-1 text-xs font-medium text-fg shadow-sm">
+                  Gasto
+                </span>
+                <button
+                  onClick={() => { setFabOpen(false); navigate("/transactions?new=1&type=expense"); }}
+                  className="h-12 w-12 rounded-full bg-danger text-white shadow-md flex items-center justify-center hover:bg-danger/90 active:scale-95 transition-transform"
+                  aria-label="Nuevo gasto"
+                >
+                  <ArrowUpRight className="h-5 w-5" />
+                </button>
+              </div>
+              <div
+                className={cn(
+                  "flex items-center gap-3 transition-all duration-200",
+                  fabOpen
+                    ? "translate-y-0 opacity-100 pointer-events-auto"
+                    : "translate-y-6 opacity-0 pointer-events-none"
+                )}
+                style={{ transitionDelay: fabOpen ? "80ms" : "0ms" }}
+              >
+                <span className="rounded-lg bg-surface border border-border px-2.5 py-1 text-xs font-medium text-fg shadow-sm">
+                  Ingreso
+                </span>
+                <button
+                  onClick={() => { setFabOpen(false); navigate("/transactions?new=1&type=income"); }}
+                  className="h-12 w-12 rounded-full bg-success text-white shadow-md flex items-center justify-center hover:bg-success/90 active:scale-95 transition-transform"
+                  aria-label="Nuevo ingreso"
+                >
+                  <ArrowDownRight className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Bottom nav mobile */}
         <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-surface/95 backdrop-blur border-t border-border safe-bottom">

@@ -82,10 +82,15 @@ export default {
           "0%": { transform: "translateY(8px)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
+        "slide-down": {
+          "0%": { transform: "translateY(-12px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
       },
       animation: {
         "fade-in": "fade-in 0.2s ease-out",
         "slide-up": "slide-up 0.25s ease-out",
+        "slide-down": "slide-down 0.22s ease-out",
       },
     },
   },

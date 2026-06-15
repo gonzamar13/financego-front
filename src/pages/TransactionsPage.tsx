@@ -69,8 +69,11 @@ export function TransactionsPage() {
   useEffect(() => {
     if (searchParams.get("new")) {
       setEditing(null);
+      const t = searchParams.get("type");
+      if (t === "income" || t === "expense") setInitialType(t);
       setQuickOpen(true);
       searchParams.delete("new");
+      searchParams.delete("type");
       setSearchParams(searchParams, { replace: true });
     }
   }, [searchParams, setSearchParams]);
@@ -347,6 +350,7 @@ export function TransactionsPage() {
         loading={create.isPending}
         onSubmit={handleCreate}
         initialType={initialType}
+        position="top"
       />
 
       {/* Modal completo para edición */}
@@ -375,6 +379,7 @@ function QuickAddModal({
   onSubmit,
   loading,
   initialType = "expense",
+  position = "bottom",
 }: {
   open: boolean;
   onClose: () => void;
@@ -385,6 +390,7 @@ function QuickAddModal({
   onSubmit: (v: FormValues) => Promise<void>;
   loading: boolean;
   initialType?: "expense" | "income";
+  position?: "bottom" | "top";
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -450,6 +456,7 @@ function QuickAddModal({
       onClose={handleClose}
       title="Nuevo movimiento"
       size="sm"
+      position={position}
       footer={
         <div className="flex w-full items-center justify-between gap-2">
           <button

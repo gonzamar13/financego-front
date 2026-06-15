@@ -10,6 +10,8 @@ export interface ModalProps {
   children?: ReactNode;
   footer?: ReactNode;
   size?: "sm" | "md" | "lg";
+  /** "bottom" = bottom-sheet on mobile (default). "top" = slide-down desde arriba, centrado. */
+  position?: "bottom" | "top";
 }
 
 const sizes = {
@@ -26,6 +28,7 @@ export function Modal({
   children,
   footer,
   size = "md",
+  position = "bottom",
 }: ModalProps) {
   useEffect(() => {
     if (!open) return;
@@ -43,15 +46,25 @@ export function Modal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
+    <div
+      className={cn(
+        "fixed inset-0 z-50 flex justify-center animate-fade-in",
+        position === "top"
+          ? "items-start pt-8 px-4"
+          : "items-end sm:items-center p-0 sm:p-4"
+      )}
+    >
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
       <div
         className={cn(
-          "relative w-full bg-surface rounded-t-2xl sm:rounded-2xl shadow-pop border border-border",
-          "animate-slide-up max-h-[92vh] flex flex-col",
+          "relative w-full bg-surface shadow-pop border border-border",
+          "max-h-[92vh] flex flex-col",
+          position === "top"
+            ? "rounded-2xl animate-slide-down"
+            : "rounded-t-2xl sm:rounded-2xl animate-slide-up",
           sizes[size]
         )}
         role="dialog"
