@@ -4,12 +4,13 @@ import {
   ArrowDownRight,
   ArrowLeftRight,
   ArrowUpRight,
+  ChevronDown,
   Pencil,
   Plus,
   Search,
   Trash2,
 } from "lucide-react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type UseFormRegister } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format, parseISO } from "date-fns";
@@ -26,6 +27,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PageSpinner } from "@/components/ui/Spinner";
 import { formatCurrency } from "@/lib/format";
 import { getApiErrorMessage } from "@/lib/api";
+import { cn } from "@/lib/cn";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useCategories } from "@/hooks/useCategories";
 import {
@@ -55,7 +57,8 @@ export function TransactionsPage() {
   const remove = useDeleteTransaction();
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const [open, setOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [fullOpen, setFullOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | TransactionType>("all");
@@ -64,7 +67,7 @@ export function TransactionsPage() {
   useEffect(() => {
     if (searchParams.get("new")) {
       setEditing(null);
-      setOpen(true);
+      setQuickOpen(true);
       searchParams.delete("new");
       setSearchParams(searchParams, { replace: true });
     }
@@ -78,6 +81,29 @@ export function TransactionsPage() {
     () => new Map((categories ?? []).map((c) => [c.id, c])),
     [categories]
   );
+
+  // Categorías más usadas por tipo (últimas 50 transacciones)
+  const recentCatIds = useMemo(() => {
+    if (!transactions) return { expense: [] as string[], income: [] as string[] };
+    const counts: Record<"expense" | "income", Map<string, number>> = {
+      expense: new Map(),
+      income: new Map(),
+    };
+    [...transactions]
+      .sort((a, b) => b.transaction_date.localeCompare(a.transaction_date))
+      .slice(0, 50)
+      .forEach((t) => {
+        if (!t.category_id) return;
+        const map = counts[t.type as "expense" | "income"];
+        map.set(t.category_id, (map.get(t.category_id) ?? 0) + 1);
+      });
+    const top = (map: Map<string, number>) =>
+      [...map.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .map(([id]) => id);
+    return { expense: top(counts.expense), income: top(counts.income) };
+  }, [transactions]);
 
   const filtered = useMemo(() => {
     if (!transactions) return [];
@@ -100,19 +126,57 @@ export function TransactionsPage() {
 
   if (isLoading) return <PageSpinner />;
 
-  const onCreate = () => {
-    setEditing(null);
-    setOpen(true);
-  };
   const onEdit = (t: Transaction) => {
     setEditing(t);
-    setOpen(true);
+    setFullOpen(true);
   };
   const onDelete = async (t: Transaction) => {
     if (!confirm("¿Eliminar este movimiento?")) return;
     try {
       await remove.mutateAsync(t.id);
       toast.success("Movimiento eliminado");
+    } catch (e) {
+      toast.error(getApiErrorMessage(e));
+    }
+  };
+
+  const handleCreate = async (values: FormValues) => {
+    try {
+      const payload = {
+        account_id: values.account_id,
+        category_id: values.category_id || null,
+        type: values.type,
+        amount: values.amount,
+        description: values.description || null,
+        transaction_date: values.transaction_date
+          ? new Date(values.transaction_date).toISOString()
+          : null,
+      };
+      await create.mutateAsync(payload);
+      toast.success("Movimiento registrado");
+      setQuickOpen(false);
+      setFullOpen(false);
+    } catch (e) {
+      toast.error(getApiErrorMessage(e));
+    }
+  };
+
+  const handleUpdate = async (values: FormValues) => {
+    if (!editing) return;
+    try {
+      const payload = {
+        account_id: values.account_id,
+        category_id: values.category_id || null,
+        type: values.type,
+        amount: values.amount,
+        description: values.description || null,
+        transaction_date: values.transaction_date
+          ? new Date(values.transaction_date).toISOString()
+          : null,
+      };
+      await update.mutateAsync({ id: editing.id, data: payload });
+      toast.success("Movimiento actualizado");
+      setFullOpen(false);
     } catch (e) {
       toast.error(getApiErrorMessage(e));
     }
@@ -127,7 +191,10 @@ export function TransactionsPage() {
             Todos tus ingresos y gastos en un solo lugar.
           </p>
         </div>
-        <Button leftIcon={<Plus className="h-4 w-4" />} onClick={onCreate}>
+        <Button
+          leftIcon={<Plus className="h-4 w-4" />}
+          onClick={() => { setEditing(null); setQuickOpen(true); }}
+        >
           Nuevo
         </Button>
       </div>
@@ -175,7 +242,10 @@ export function TransactionsPage() {
                 : "Registrá tu primer ingreso o gasto."
             }
             action={
-              <Button leftIcon={<Plus className="h-4 w-4" />} onClick={onCreate}>
+              <Button
+                leftIcon={<Plus className="h-4 w-4" />}
+                onClick={() => { setEditing(null); setQuickOpen(true); }}
+              >
                 Nuevo movimiento
               </Button>
             }
@@ -251,41 +321,242 @@ export function TransactionsPage() {
         )}
       </Card>
 
+      {/* Modal rápido para nuevas transacciones */}
+      <QuickAddModal
+        open={quickOpen}
+        onClose={() => setQuickOpen(false)}
+        onSwitchToFull={() => { setQuickOpen(false); setFullOpen(true); }}
+        accounts={accounts ?? []}
+        categories={categories ?? []}
+        recentCatIds={recentCatIds}
+        loading={create.isPending}
+        onSubmit={handleCreate}
+      />
+
+      {/* Modal completo para edición */}
       <TxFormModal
-        open={open}
-        onClose={() => setOpen(false)}
+        open={fullOpen}
+        onClose={() => { setFullOpen(false); setEditing(null); }}
         editing={editing}
         accounts={accounts ?? []}
         categories={categories ?? []}
         loading={create.isPending || update.isPending}
-        onSubmit={async (values) => {
-          try {
-            const payload = {
-              account_id: values.account_id,
-              category_id: values.category_id || null,
-              type: values.type,
-              amount: values.amount,
-              description: values.description || null,
-              transaction_date: values.transaction_date
-                ? new Date(values.transaction_date).toISOString()
-                : null,
-            };
-            if (editing) {
-              await update.mutateAsync({ id: editing.id, data: payload });
-              toast.success("Movimiento actualizado");
-            } else {
-              await create.mutateAsync(payload);
-              toast.success("Movimiento registrado");
-            }
-            setOpen(false);
-          } catch (e) {
-            toast.error(getApiErrorMessage(e));
-          }
-        }}
+        onSubmit={editing ? handleUpdate : handleCreate}
       />
     </div>
   );
 }
+
+// ─── Quick Add Modal ──────────────────────────────────────────────────────────
+
+function QuickAddModal({
+  open,
+  onClose,
+  onSwitchToFull,
+  accounts,
+  categories,
+  recentCatIds,
+  onSubmit,
+  loading,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSwitchToFull: () => void;
+  accounts: Array<{ id: string; account_name: string }>;
+  categories: Array<{ id: string; name: string; type: string }>;
+  recentCatIds: { expense: string[]; income: string[] };
+  onSubmit: (v: FormValues) => Promise<void>;
+  loading: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      account_id: accounts[0]?.id ?? "",
+      category_id: "",
+      type: "expense",
+      amount: 0,
+      description: "",
+      transaction_date: format(new Date(), "yyyy-MM-dd"),
+    },
+  });
+
+  // Resetear al abrir (siempre fecha de hoy)
+  useEffect(() => {
+    if (open) {
+      reset({
+        account_id: accounts[0]?.id ?? "",
+        category_id: "",
+        type: "expense",
+        amount: 0,
+        description: "",
+        transaction_date: format(new Date(), "yyyy-MM-dd"),
+      });
+      setExpanded(false);
+    }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const type = watch("type");
+  const categoryId = watch("category_id");
+
+  // Categorías para chips: las más usadas del tipo actual, en orden de uso
+  const chipCats = useMemo(() => {
+    const ids = recentCatIds[type as "expense" | "income"] ?? [];
+    if (ids.length > 0) {
+      return ids
+        .map((id) => categories.find((c) => c.id === id && c.type === type))
+        .filter(Boolean) as Array<{ id: string; name: string; type: string }>;
+    }
+    // Fallback: todas las categorías del tipo si no hay historial
+    return categories.filter((c) => c.type === type).slice(0, 8);
+  }, [recentCatIds, type, categories]);
+
+  const handleClose = () => {
+    reset();
+    setExpanded(false);
+    onClose();
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="Nuevo movimiento"
+      size="sm"
+      footer={
+        <div className="flex w-full items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={onSwitchToFull}
+            className="text-xs text-fg-muted hover:text-fg underline-offset-2 hover:underline transition-colors"
+          >
+            Modo completo
+          </button>
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={handleClose} disabled={loading}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSubmit(onSubmit)} loading={loading}>
+              Registrar
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        {/* Toggle tipo */}
+        <div className="grid grid-cols-2 gap-2 rounded-xl bg-bg-muted p-1">
+          <TypePill register={register} value="expense" current={type} label="Gasto" />
+          <TypePill register={register} value="income" current={type} label="Ingreso" />
+        </div>
+
+        {/* Monto — autofocus */}
+        <Controller
+          name="amount"
+          control={control}
+          render={({ field, fieldState }) => (
+            <CurrencyInput
+              label="Monto"
+              placeholder="0"
+              autoFocus
+              value={field.value}
+              onChange={(raw) => field.onChange(raw === "" ? 0 : Number(raw))}
+              onBlur={field.onBlur}
+              ref={field.ref}
+              error={fieldState.error?.message}
+            />
+          )}
+        />
+
+        {/* Categorías — chips de acceso rápido */}
+        {chipCats.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-fg-muted mb-2">Categoría</p>
+            <div className="flex flex-wrap gap-2">
+              {chipCats.map((c) => {
+                const active = categoryId === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() =>
+                      setValue("category_id", active ? "" : c.id, {
+                        shouldValidate: true,
+                      })
+                    }
+                    className={cn(
+                      "text-sm px-3 py-1.5 rounded-full border font-medium transition-colors",
+                      active
+                        ? type === "expense"
+                          ? "bg-danger text-white border-danger"
+                          : "bg-success text-white border-success"
+                        : "bg-bg-subtle border-border text-fg hover:border-brand-400"
+                    )}
+                  >
+                    {c.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Cuenta */}
+        <Select
+          label="Cuenta"
+          options={accounts.map((a) => ({ value: a.id, label: a.account_name }))}
+          {...register("account_id")}
+          error={errors.account_id?.message}
+        />
+
+        {/* Más opciones */}
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="flex items-center gap-1 text-sm text-brand-600 dark:text-brand-400 hover:underline underline-offset-2 transition-colors self-start"
+        >
+          <ChevronDown
+            className={cn("h-4 w-4 transition-transform", expanded && "rotate-180")}
+          />
+          {expanded ? "Menos opciones" : "Más opciones"}
+        </button>
+
+        {expanded && (
+          <div className="flex flex-col gap-4 border-t border-border pt-4">
+            <Input
+              label="Descripción"
+              placeholder="Ej: Compra del super"
+              {...register("description")}
+            />
+            <Input label="Fecha" type="date" {...register("transaction_date")} />
+            {/* Selector completo de categorías (alternativa a chips) */}
+            <Select
+              label="Categoría (todas)"
+              options={[
+                { value: "", label: "Sin categoría" },
+                ...categories
+                  .filter((c) => c.type === type)
+                  .map((c) => ({ value: c.id, label: c.name })),
+              ]}
+              {...register("category_id")}
+            />
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+// ─── Full Form Modal (edición) ────────────────────────────────────────────────
 
 function TxFormModal({
   open,
@@ -400,13 +671,15 @@ function TxFormModal({
   );
 }
 
+// ─── TypePill ────────────────────────────────────────────────────────────────
+
 function TypePill({
   register,
   value,
   current,
   label,
 }: {
-  register: ReturnType<typeof useForm<FormValues>>["register"];
+  register: UseFormRegister<FormValues>;
   value: "income" | "expense";
   current: string;
   label: string;

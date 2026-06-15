@@ -10,6 +10,7 @@ export interface CurrencyInputProps {
   onChange?: (rawDigits: string) => void;
   onBlur?: () => void;
   disabled?: boolean;
+  autoFocus?: boolean;
   className?: string;
 }
 
@@ -27,7 +28,7 @@ function toFormatted(raw: string): string {
 }
 
 export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
-  ({ value, onChange, onBlur, label, hint, error, placeholder = "0", disabled, className }, ref) => {
+  ({ value, onChange, onBlur, label, hint, error, placeholder = "0", disabled, autoFocus, className }, ref) => {
     const [focused, setFocused] = useState(false);
 
     const raw = toRaw(value);
@@ -57,6 +58,7 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
         onFocus={() => setFocused(true)}
         onBlur={handleBlur}
         disabled={disabled}
+        autoFocus={autoFocus}
         className={className}
       />
     );
