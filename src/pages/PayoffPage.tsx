@@ -368,6 +368,7 @@ function MonthlyBreakdown({
   months: MonthSnapshot[];
   monthlyBudget: string;
 }) {
+  const fmt = useFormatCurrency();
   const [selectedMonth, setSelectedMonth] = useState(0); // índice 0 = mes 1
   const month = months[selectedMonth];
   const totalBudget = Number(monthlyBudget);
@@ -470,6 +471,7 @@ function StrategyComparison({
   alt: PayoffResponse;
   altStrategy: StrategyType;
 }) {
+  const fmt = useFormatCurrency();
   const currentInterest = Number(current.total_interest);
   const altInterest = Number(alt.total_interest);
   const saving = Math.abs(altInterest - currentInterest);

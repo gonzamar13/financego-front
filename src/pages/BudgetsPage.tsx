@@ -281,6 +281,7 @@ function BudgetCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const fmt = useFormatCurrency();
   const status = statusBadge[budget.status];
   const tone = budget.status === "exceeded" ? "danger" : budget.status === "warning" ? "warning" : "brand";
 

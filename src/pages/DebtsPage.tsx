@@ -245,6 +245,7 @@ function DebtCard({
   onDelete: () => void;
   onPay: () => void;
 }) {
+  const fmt = useFormatCurrency();
   const Icon = debt.type === "credit_card" ? CreditCard : HandCoins;
   const remaining = Number(debt.remaining_balance);
   const isPaid = remaining <= 0;
@@ -536,6 +537,7 @@ function DebtFormModal({
 }
 
 function PaymentModal({ debt, onClose }: { debt: Debt | null; onClose: () => void }) {
+  const fmt = useFormatCurrency();
   const { data: payments } = useDebtPayments(debt?.id ?? null);
   const create = useCreatePayment();
   const remove = useDeletePayment();
