@@ -157,6 +157,14 @@ export function AppShell() {
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <NavLink
+                  to="/debts/payoff"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 rounded-lg border border-border bg-bg-subtle px-3 py-2 text-sm font-medium text-fg"
+                >
+                  <TrendingDown className="h-4 w-4" />
+                  Plan de pago
+                </NavLink>
+                <NavLink
                   to="/categories"
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-2 rounded-lg border border-border bg-bg-subtle px-3 py-2 text-sm font-medium text-fg"

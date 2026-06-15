@@ -10,7 +10,7 @@ import {
   Trash2,
   TrendingUp,
 } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { CurrencyInput } from "@/components/ui/CurrencyInput";
 import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
@@ -364,6 +365,7 @@ function BudgetFormModal({
 }) {
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -419,12 +421,20 @@ function BudgetFormModal({
             Necesitás al menos una categoría de gasto. Creá una en la sección "Categorías".
           </p>
         )}
-        <Input
-          label="Monto del presupuesto"
-          type="number"
-          step="0.01"
-          {...register("amount")}
-          error={errors.amount?.message}
+        <Controller
+          name="amount"
+          control={control}
+          render={({ field, fieldState }) => (
+            <CurrencyInput
+              label="Monto del presupuesto"
+              placeholder="Ej: 500000"
+              value={field.value}
+              onChange={(raw) => field.onChange(raw === "" ? 0 : Number(raw))}
+              onBlur={field.onBlur}
+              ref={field.ref}
+              error={fieldState.error?.message}
+            />
+          )}
         />
         <Input
           label="Umbral de alerta (%)"

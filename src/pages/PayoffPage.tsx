@@ -20,10 +20,10 @@ import {
 import { toast } from "sonner";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/format";
+import { CurrencyInput } from "@/components/ui/CurrencyInput";
 import { getApiErrorMessage } from "@/lib/api";
 import { usePayoffPlan } from "@/hooks/useDebts";
 import type { PayoffResponse, StrategyType } from "@/types/api";
@@ -80,13 +80,10 @@ export function PayoffPage() {
         <CardBody>
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <Input
+              <CurrencyInput
                 label="Presupuesto mensual (opcional)"
-                type="number"
-                min={1}
-                step="1"
                 value={budget}
-                onChange={(e) => setBudget(e.target.value)}
+                onChange={(raw) => setBudget(raw)}
                 placeholder="Ej: 500000"
                 hint={
                   result

@@ -10,7 +10,7 @@ import {
   CheckCircle2,
   Receipt,
 } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format, parseISO } from "date-fns";
@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { CurrencyInput } from "@/components/ui/CurrencyInput";
 import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
@@ -390,6 +391,7 @@ function DebtFormModal({
 }) {
   const {
     register,
+    control,
     handleSubmit,
     reset,
     watch,
@@ -465,12 +467,20 @@ function DebtFormModal({
           placeholder="Ej: Banco Itaú"
           {...register("lender")}
         />
-        <Input
-          label={type === "credit_card" ? "Límite / saldo" : "Capital"}
-          type="number"
-          step="0.01"
-          {...register("principal_amount")}
-          error={errors.principal_amount?.message}
+        <Controller
+          name="principal_amount"
+          control={control}
+          render={({ field, fieldState }) => (
+            <CurrencyInput
+              label={type === "credit_card" ? "Límite / saldo" : "Capital"}
+              placeholder="Ej: 5000000"
+              value={field.value}
+              onChange={(raw) => field.onChange(raw === "" ? 0 : Number(raw))}
+              onBlur={field.onBlur}
+              ref={field.ref}
+              error={fieldState.error?.message}
+            />
+          )}
         />
         <Input
           label="Tasa de interés (%)"
@@ -487,12 +497,20 @@ function DebtFormModal({
               placeholder="Opcional"
               {...register("total_installments")}
             />
-            <Input
-              label="Monto de cuota"
-              type="number"
-              step="0.01"
-              placeholder="Opcional"
-              {...register("installment_amount")}
+            <Controller
+              name="installment_amount"
+              control={control}
+              render={({ field, fieldState }) => (
+                <CurrencyInput
+                  label="Monto de cuota"
+                  placeholder="Opcional"
+                  value={field.value as number | undefined}
+                  onChange={(raw) => field.onChange(raw === "" ? ("" as unknown as number) : Number(raw))}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  error={fieldState.error?.message}
+                />
+              )}
             />
           </>
         )}
@@ -522,6 +540,7 @@ function PaymentModal({ debt, onClose }: { debt: Debt | null; onClose: () => voi
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -590,12 +609,20 @@ function PaymentModal({ debt, onClose }: { debt: Debt | null; onClose: () => voi
       size="lg"
     >
       <form className="grid grid-cols-1 sm:grid-cols-2 gap-3" onSubmit={handleSubmit(onSubmit)}>
-        <Input
-          label="Monto"
-          type="number"
-          step="0.01"
-          {...register("amount")}
-          error={errors.amount?.message}
+        <Controller
+          name="amount"
+          control={control}
+          render={({ field, fieldState }) => (
+            <CurrencyInput
+              label="Monto"
+              placeholder="Ej: 150000"
+              value={field.value}
+              onChange={(raw) => field.onChange(raw === "" ? 0 : Number(raw))}
+              onBlur={field.onBlur}
+              ref={field.ref}
+              error={fieldState.error?.message}
+            />
+          )}
         />
         <Input label="Fecha" type="date" {...register("payment_date")} />
         <Input

@@ -9,7 +9,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format, parseISO } from "date-fns";
@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { CurrencyInput } from "@/components/ui/CurrencyInput";
 import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
@@ -305,6 +306,7 @@ function TxFormModal({
 }) {
   const {
     register,
+    control,
     handleSubmit,
     reset,
     watch,
@@ -357,13 +359,20 @@ function TxFormModal({
           <TypePill register={register} value="expense" current={type} label="Gasto" />
           <TypePill register={register} value="income" current={type} label="Ingreso" />
         </div>
-        <Input
-          label="Monto"
-          type="number"
-          step="0.01"
-          placeholder="0.00"
-          {...register("amount")}
-          error={errors.amount?.message}
+        <Controller
+          name="amount"
+          control={control}
+          render={({ field, fieldState }) => (
+            <CurrencyInput
+              label="Monto"
+              placeholder="Ej: 150000"
+              value={field.value}
+              onChange={(raw) => field.onChange(raw === "" ? 0 : Number(raw))}
+              onBlur={field.onBlur}
+              ref={field.ref}
+              error={fieldState.error?.message}
+            />
+          )}
         />
         <Select
           label="Cuenta"
