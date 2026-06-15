@@ -1,9 +1,11 @@
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowDownRight,
   ArrowUpRight,
+  ChevronRight,
   Plus,
+  PiggyBank,
   Wallet,
   ArrowLeftRight,
   AlertTriangle,
@@ -17,10 +19,6 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
 } from "recharts";
 import { format, parseISO, startOfMonth, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
@@ -31,9 +29,9 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PageSpinner } from "@/components/ui/Spinner";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { cn } from "@/lib/cn";
 import {
   useAccountBalances,
-  useCategorySummary,
   useTransactionSummary,
   useTransactions,
 } from "@/hooks/useTransactions";
@@ -41,21 +39,21 @@ import { useAccounts } from "@/hooks/useAccounts";
 import { useCategories } from "@/hooks/useCategories";
 import { useAuth } from "@/providers/AuthProvider";
 import { useDebtSummary } from "@/hooks/useDebts";
-import { useBudgetAlerts } from "@/hooks/useBudgets";
+import { useBudgetAlerts, useBudgets } from "@/hooks/useBudgets";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-
-const PIE_COLORS = ["#16a34a", "#2563eb", "#d97706", "#dc2626", "#9333ea", "#0891b2", "#ea580c"];
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const now = new Date();
   const { data: summary, isLoading: l1 } = useTransactionSummary();
   const { data: balances } = useAccountBalances();
-  const { data: catSummary } = useCategorySummary();
   const { data: transactions } = useTransactions();
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
   const { data: debtSummary } = useDebtSummary();
   const { data: budgetAlerts } = useBudgetAlerts();
+  const { data: budgets } = useBudgets({ year: now.getFullYear(), month: now.getMonth() + 1 });
 
   const monthlyData = useMemo(() => {
     if (!transactions) return [];
@@ -74,14 +72,6 @@ export function DashboardPage() {
     }
     return Object.values(months);
   }, [transactions]);
-
-  const expensesByCat = useMemo(
-    () => (catSummary ?? []).filter((c) => c.type === "expense").map((c) => ({
-      name: c.category_name,
-      value: Number(c.total),
-    })),
-    [catSummary]
-  );
 
   const recent = useMemo(() => {
     return [...(transactions ?? [])]
@@ -224,44 +214,77 @@ export function DashboardPage() {
           </CardBody>
         </Card>
 
-        <Card>
-          <CardHeader title="Gastos por categoría" subtitle="Distribución actual" />
-          <CardBody>
-            {expensesByCat.length === 0 ? (
-              <div className="h-64 flex items-center justify-center text-sm text-fg-subtle">
-                Sin gastos categorizados.
-              </div>
-            ) : (
-              <div className="h-64">
-                <ResponsiveContainer>
-                  <PieChart>
-                    <Pie
-                      data={expensesByCat}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={2}
-                    >
-                      {expensesByCat.map((_, i) => (
-                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        background: "rgb(var(--surface))",
-                        border: "1px solid rgb(var(--border))",
-                        borderRadius: 12,
-                        color: "rgb(var(--fg))",
-                      }}
-                      formatter={(v: number) => formatCurrency(v)}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </CardBody>
+        <Card className="flex flex-col">
+          <CardHeader
+            title="Presupuesto del mes"
+            subtitle={format(now, "MMMM yyyy", { locale: es })}
+            action={
+              <Link to="/budgets">
+                <Button variant="ghost" size="sm">Ver todos</Button>
+              </Link>
+            }
+          />
+          {!budgets || budgets.length === 0 ? (
+            <CardBody className="flex-1 flex items-center justify-center">
+              <EmptyState
+                icon={<PiggyBank className="h-6 w-6" />}
+                title="Sin presupuestos"
+                description="Creá presupuestos por categoría para ver tu progreso aquí."
+                action={
+                  <Link to="/budgets">
+                    <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+                      Crear presupuesto
+                    </Button>
+                  </Link>
+                }
+              />
+            </CardBody>
+          ) : (
+            <div className="flex-1 overflow-y-auto divide-y divide-border max-h-72 lg:max-h-64">
+              {budgets.map((b) => (
+                <button
+                  key={b.id}
+                  onClick={() =>
+                    navigate(`/transactions?new=1&type=expense&category_id=${b.category_id}`)
+                  }
+                  className="w-full text-left px-5 py-3 flex flex-col gap-1.5 hover:bg-bg-subtle active:bg-bg-muted transition-colors group"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium text-fg truncate">
+                      {b.category_name}
+                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {b.status !== "ok" && (
+                        <Badge tone={b.status === "exceeded" ? "danger" : "warning"}>
+                          {b.status === "exceeded" ? "Excedido" : "Alerta"}
+                        </Badge>
+                      )}
+                      <ChevronRight className="h-3.5 w-3.5 text-fg-subtle opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                  <ProgressBar
+                    value={b.progress_percent}
+                    tone={
+                      b.status === "exceeded" ? "danger"
+                      : b.status === "warning" ? "warning"
+                      : "success"
+                    }
+                  />
+                  <div className="flex justify-between text-xs text-fg-subtle">
+                    <span>{formatCurrency(b.spent)} gastado</span>
+                    <span className={cn(
+                      "font-medium",
+                      b.status === "exceeded" ? "text-danger"
+                      : b.status === "warning" ? "text-warning"
+                      : "text-fg-muted"
+                    )}>
+                      {formatPercent(b.progress_percent)} de {formatCurrency(b.amount)}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </Card>
       </div>
 

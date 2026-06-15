@@ -59,6 +59,7 @@ export function TransactionsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [quickOpen, setQuickOpen] = useState(false);
   const [initialType, setInitialType] = useState<"expense" | "income">("expense");
+  const [initialCategoryId, setInitialCategoryId] = useState<string | undefined>();
   const [fullOpen, setFullOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [fabOpen, setFabOpen] = useState(false);
@@ -71,9 +72,12 @@ export function TransactionsPage() {
       setEditing(null);
       const t = searchParams.get("type");
       if (t === "income" || t === "expense") setInitialType(t);
+      const cat = searchParams.get("category_id");
+      setInitialCategoryId(cat ?? undefined);
       setQuickOpen(true);
       searchParams.delete("new");
       searchParams.delete("type");
+      searchParams.delete("category_id");
       setSearchParams(searchParams, { replace: true });
     }
   }, [searchParams, setSearchParams]);
@@ -351,6 +355,7 @@ export function TransactionsPage() {
         loading={create.isPending}
         onSubmit={handleCreate}
         initialType={initialType}
+        initialCategoryId={initialCategoryId}
         position="top"
       />
 
@@ -380,6 +385,7 @@ function QuickAddModal({
   onSubmit,
   loading,
   initialType = "expense",
+  initialCategoryId,
   position = "bottom",
 }: {
   open: boolean;
@@ -391,6 +397,7 @@ function QuickAddModal({
   onSubmit: (v: FormValues) => Promise<void>;
   loading: boolean;
   initialType?: "expense" | "income";
+  initialCategoryId?: string;
   position?: "bottom" | "top";
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -415,12 +422,12 @@ function QuickAddModal({
     },
   });
 
-  // Resetear al abrir, aplicando el tipo inicial (expense o income desde el FAB)
+  // Resetear al abrir con tipo e categoria inicial (desde FAB o tap en presupuesto)
   useEffect(() => {
     if (open) {
       reset({
         account_id: accounts[0]?.id ?? "",
-        category_id: "",
+        category_id: initialCategoryId ?? "",
         type: initialType,
         amount: 0,
         description: "",
@@ -433,17 +440,24 @@ function QuickAddModal({
   const type = watch("type");
   const categoryId = watch("category_id");
 
-  // Categorías para chips: las más usadas del tipo actual, en orden de uso
+  // Categorías para chips: las más usadas del tipo actual.
+  // Si hay initialCategoryId y no está en el top-8, se antepone para que siempre sea visible.
   const chipCats = useMemo(() => {
     const ids = recentCatIds[type as "expense" | "income"] ?? [];
+    let result: Array<{ id: string; name: string; type: string }>;
     if (ids.length > 0) {
-      return ids
+      result = ids
         .map((id) => categories.find((c) => c.id === id && c.type === type))
         .filter(Boolean) as Array<{ id: string; name: string; type: string }>;
+    } else {
+      result = categories.filter((c) => c.type === type).slice(0, 8);
     }
-    // Fallback: todas las categorías del tipo si no hay historial
-    return categories.filter((c) => c.type === type).slice(0, 8);
-  }, [recentCatIds, type, categories]);
+    if (initialCategoryId && !result.find((c) => c.id === initialCategoryId)) {
+      const cat = categories.find((c) => c.id === initialCategoryId);
+      if (cat) result = [cat, ...result].slice(0, 8);
+    }
+    return result;
+  }, [recentCatIds, type, categories, initialCategoryId]);
 
   const handleClose = () => {
     reset();
