@@ -1,4 +1,4 @@
-import { Sun, Moon, Monitor, User as UserIcon, Mail, Shield, LogOut } from "lucide-react";
+import { Sun, Moon, Monitor, User as UserIcon, Mail, Shield, LogOut, Smartphone, Share, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useAuth } from "@/providers/AuthProvider";
 import { useTheme } from "@/providers/ThemeProvider";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -13,6 +14,7 @@ export function SettingsPage() {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const { canInstall, install, isStandalone, isIOS } = usePWAInstall();
 
   const themeOptions = [
     { value: "light", label: "Claro", icon: Sun },
@@ -80,6 +82,55 @@ export function SettingsPage() {
               );
             })}
           </div>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader title="Instalar app" subtitle="Usá FinanceGO como una app nativa" />
+        <CardBody>
+          {isStandalone ? (
+            <div className="flex items-center gap-3 text-success">
+              <CheckCircle2 className="h-5 w-5 shrink-0" />
+              <p className="text-sm font-medium">Ya estás usando FinanceGO como app instalada.</p>
+            </div>
+          ) : canInstall ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-fg-muted">
+                Instalá FinanceGO en tu pantalla de inicio para acceder más rápido, sin barra del navegador.
+              </p>
+              <Button
+                leftIcon={<Smartphone className="h-4 w-4" />}
+                onClick={install}
+                className="self-start"
+              >
+                Instalar en este dispositivo
+              </Button>
+            </div>
+          ) : isIOS ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-fg-muted">
+                Para instalar en iPhone o iPad, seguí estos pasos desde <strong>Safari</strong>:
+              </p>
+              <ol className="flex flex-col gap-2">
+                <li className="flex items-start gap-2 text-sm text-fg">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold dark:bg-brand-500/20 dark:text-brand-400">1</span>
+                  Tocá el ícono <Share className="inline h-4 w-4 mx-1 text-brand-600" /> de Compartir en la barra inferior de Safari.
+                </li>
+                <li className="flex items-start gap-2 text-sm text-fg">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold dark:bg-brand-500/20 dark:text-brand-400">2</span>
+                  Desplazate y tocá <strong>"Agregar a pantalla de inicio"</strong>.
+                </li>
+                <li className="flex items-start gap-2 text-sm text-fg">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold dark:bg-brand-500/20 dark:text-brand-400">3</span>
+                  Confirmá tocando <strong>"Agregar"</strong> arriba a la derecha.
+                </li>
+              </ol>
+            </div>
+          ) : (
+            <p className="text-sm text-fg-muted">
+              Abrí esta página desde Chrome en Android para instalar la app, o desde Safari en iPhone.
+            </p>
+          )}
         </CardBody>
       </Card>
 
