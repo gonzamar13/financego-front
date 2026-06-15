@@ -58,8 +58,10 @@ export function TransactionsPage() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [quickOpen, setQuickOpen] = useState(false);
+  const [initialType, setInitialType] = useState<"expense" | "income">("expense");
   const [fullOpen, setFullOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
+  const [fabOpen, setFabOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | TransactionType>("all");
   const [accountFilter, setAccountFilter] = useState<string>("all");
@@ -193,7 +195,7 @@ export function TransactionsPage() {
         </div>
         <Button
           leftIcon={<Plus className="h-4 w-4" />}
-          onClick={() => { setEditing(null); setQuickOpen(true); }}
+          onClick={() => { setEditing(null); setInitialType("expense"); setQuickOpen(true); }}
         >
           Nuevo
         </Button>
@@ -244,7 +246,7 @@ export function TransactionsPage() {
             action={
               <Button
                 leftIcon={<Plus className="h-4 w-4" />}
-                onClick={() => { setEditing(null); setQuickOpen(true); }}
+                onClick={() => { setEditing(null); setInitialType("expense"); setQuickOpen(true); }}
               >
                 Nuevo movimiento
               </Button>
@@ -321,6 +323,19 @@ export function TransactionsPage() {
         )}
       </Card>
 
+      {/* FAB Speed Dial — solo mobile */}
+      <SpeedDial
+        open={fabOpen}
+        onToggle={() => setFabOpen((v) => !v)}
+        onClose={() => setFabOpen(false)}
+        onSelect={(type) => {
+          setFabOpen(false);
+          setEditing(null);
+          setInitialType(type);
+          setQuickOpen(true);
+        }}
+      />
+
       {/* Modal rápido para nuevas transacciones */}
       <QuickAddModal
         open={quickOpen}
@@ -331,6 +346,7 @@ export function TransactionsPage() {
         recentCatIds={recentCatIds}
         loading={create.isPending}
         onSubmit={handleCreate}
+        initialType={initialType}
       />
 
       {/* Modal completo para edición */}
@@ -358,6 +374,7 @@ function QuickAddModal({
   recentCatIds,
   onSubmit,
   loading,
+  initialType = "expense",
 }: {
   open: boolean;
   onClose: () => void;
@@ -367,6 +384,7 @@ function QuickAddModal({
   recentCatIds: { expense: string[]; income: string[] };
   onSubmit: (v: FormValues) => Promise<void>;
   loading: boolean;
+  initialType?: "expense" | "income";
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -390,13 +408,13 @@ function QuickAddModal({
     },
   });
 
-  // Resetear al abrir (siempre fecha de hoy)
+  // Resetear al abrir, aplicando el tipo inicial (expense o income desde el FAB)
   useEffect(() => {
     if (open) {
       reset({
         account_id: accounts[0]?.id ?? "",
         category_id: "",
-        type: "expense",
+        type: initialType,
         amount: 0,
         description: "",
         transaction_date: format(new Date(), "yyyy-MM-dd"),
@@ -668,6 +686,96 @@ function TxFormModal({
         <Input label="Fecha" type="date" {...register("transaction_date")} />
       </form>
     </Modal>
+  );
+}
+
+// ─── Speed Dial FAB ──────────────────────────────────────────────────────────
+
+function SpeedDial({
+  open,
+  onToggle,
+  onClose,
+  onSelect,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  onSelect: (type: "expense" | "income") => void;
+}) {
+  return (
+    <>
+      {/* Backdrop invisible para cerrar al tocar fuera */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 lg:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      <div className="fixed bottom-20 right-4 z-50 lg:hidden flex flex-col-reverse items-end gap-3">
+        {/* Botón principal */}
+        <button
+          onClick={onToggle}
+          className={cn(
+            "h-14 w-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300",
+            "bg-brand-600 text-white hover:bg-brand-700 active:scale-95"
+          )}
+          aria-label={open ? "Cerrar" : "Nuevo movimiento"}
+        >
+          <Plus
+            className={cn(
+              "h-6 w-6 transition-transform duration-300",
+              open && "rotate-45"
+            )}
+          />
+        </button>
+
+        {/* Sub-botón: Gasto */}
+        <div
+          className={cn(
+            "flex items-center gap-3 transition-all duration-200",
+            open
+              ? "translate-y-0 opacity-100 pointer-events-auto"
+              : "translate-y-6 opacity-0 pointer-events-none"
+          )}
+          style={{ transitionDelay: open ? "30ms" : "0ms" }}
+        >
+          <span className="rounded-lg bg-surface border border-border px-2.5 py-1 text-xs font-medium text-fg shadow-sm">
+            Gasto
+          </span>
+          <button
+            onClick={() => onSelect("expense")}
+            className="h-12 w-12 rounded-full bg-danger text-white shadow-md flex items-center justify-center hover:bg-danger/90 active:scale-95 transition-transform"
+            aria-label="Nuevo gasto"
+          >
+            <ArrowUpRight className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Sub-botón: Ingreso */}
+        <div
+          className={cn(
+            "flex items-center gap-3 transition-all duration-200",
+            open
+              ? "translate-y-0 opacity-100 pointer-events-auto"
+              : "translate-y-6 opacity-0 pointer-events-none"
+          )}
+          style={{ transitionDelay: open ? "80ms" : "0ms" }}
+        >
+          <span className="rounded-lg bg-surface border border-border px-2.5 py-1 text-xs font-medium text-fg shadow-sm">
+            Ingreso
+          </span>
+          <button
+            onClick={() => onSelect("income")}
+            className="h-12 w-12 rounded-full bg-success text-white shadow-md flex items-center justify-center hover:bg-success/90 active:scale-95 transition-transform"
+            aria-label="Nuevo ingreso"
+          >
+            <ArrowDownRight className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
 
