@@ -4,9 +4,12 @@ import {
   ArrowLeftRight,
   CalendarCheck,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Loader2,
   TrendingDown,
+  Wallet,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -28,7 +31,8 @@ import { CurrencyInput } from "@/components/ui/CurrencyInput";
 import { getApiErrorMessage } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { usePayoffPlan } from "@/hooks/useDebts";
-import type { PayoffRequest, PayoffResponse, StrategyType } from "@/types/api";
+import type { MonthSnapshot, PayoffRequest, PayoffResponse, StrategyType } from "@/types/api";
+import { ProgressBar } from "@/components/ui/ProgressBar";
 
 const STRATEGY_OPTIONS = [
   { value: "avalanche", label: "Avalancha — minimiza el interés total" },
@@ -206,6 +210,11 @@ export function PayoffPage() {
             />
           </div>
 
+          {/* Distribución mensual por deuda */}
+          {result.months.length > 0 && (
+            <MonthlyBreakdown months={result.months} monthlyBudget={result.monthly_budget} />
+          )}
+
           {/* Comparación de estrategias */}
           {compResult && (
             <StrategyComparison
@@ -347,6 +356,104 @@ function SummaryCard({
         </div>
         <p className="mt-2 text-xl font-bold text-fg">{value}</p>
       </div>
+    </Card>
+  );
+}
+
+function MonthlyBreakdown({
+  months,
+  monthlyBudget,
+}: {
+  months: MonthSnapshot[];
+  monthlyBudget: string;
+}) {
+  const [selectedMonth, setSelectedMonth] = useState(0); // índice 0 = mes 1
+  const month = months[selectedMonth];
+  const totalBudget = Number(monthlyBudget);
+  const totalPaid = month.payments.reduce((s, p) => s + Number(p.paid), 0);
+  const remanente = totalBudget - totalPaid;
+
+  const canPrev = selectedMonth > 0;
+  const canNext = selectedMonth < months.length - 1;
+
+  return (
+    <Card>
+      <CardHeader
+        title="Distribución del presupuesto por mes"
+        subtitle="Cuánto va a cada deuda según el plan de pago simulado."
+      />
+      <CardBody>
+        {/* Selector de mes */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => setSelectedMonth((m) => m - 1)}
+            disabled={!canPrev}
+            className="rounded-lg p-1.5 text-fg-muted hover:bg-bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <div className="text-center">
+            <p className="text-sm font-semibold text-fg">
+              Mes {month.month} — {format(parseISO(month.date), "MMMM yyyy", { locale: es })}
+            </p>
+            <p className="text-xs text-fg-muted">{selectedMonth + 1} de {months.length}</p>
+          </div>
+          <button
+            onClick={() => setSelectedMonth((m) => m + 1)}
+            disabled={!canNext}
+            className="rounded-lg p-1.5 text-fg-muted hover:bg-bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Desglose por deuda */}
+        <div className="flex flex-col gap-4">
+          {month.payments.map((p) => {
+            const pct = totalBudget > 0 ? (Number(p.paid) / totalBudget) * 100 : 0;
+            const isPaidOff = Number(p.remaining) === 0 && Number(p.paid) > 0;
+            return (
+              <div key={p.debt_id}>
+                <div className="flex items-center justify-between text-sm mb-1.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-medium text-fg truncate">{p.name}</span>
+                    {isPaidOff && (
+                      <span className="shrink-0 text-xs font-medium text-success bg-success-soft px-1.5 py-0.5 rounded-full">
+                        ¡Saldada!
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-semibold text-fg shrink-0 ml-3">
+                    {formatCurrency(p.paid)}
+                  </span>
+                </div>
+                <ProgressBar value={pct} tone={isPaidOff ? "success" : "brand"} />
+                <div className="flex justify-between text-xs text-fg-muted mt-1">
+                  <span>{pct.toFixed(0)}% del presupuesto</span>
+                  <span>Saldo restante: {formatCurrency(p.remaining)}</span>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Totales */}
+          <div className="border-t border-border pt-3 space-y-1.5">
+            <div className="flex justify-between text-sm">
+              <span className="text-fg-muted">Total destinado a deudas</span>
+              <span className="font-semibold text-fg">{formatCurrency(totalPaid)}</span>
+            </div>
+            {remanente > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="flex items-center gap-1.5 text-fg-muted">
+                  <Wallet className="h-3.5 w-3.5" />
+                  Remanente libre
+                </span>
+                <span className="font-semibold text-success">{formatCurrency(remanente)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardBody>
     </Card>
   );
 }

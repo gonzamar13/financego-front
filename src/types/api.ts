@@ -224,10 +224,18 @@ export interface PayoffRequest {
   strategy?: StrategyType;
 }
 
+export interface MonthPaymentDetail {
+  debt_id: string;
+  name: string;
+  paid: string;
+  remaining: string;
+}
+
 export interface MonthSnapshot {
   month: number;
   date: string;
   total_remaining: string;
+  payments: MonthPaymentDetail[];
 }
 
 export interface DebtPayoffDetail {
