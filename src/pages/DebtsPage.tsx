@@ -543,7 +543,6 @@ function PaymentModal({ debt, onClose }: { debt: Debt | null; onClose: () => voi
     control,
     handleSubmit,
     reset,
-    formState: { errors },
   } = useForm<PaymentForm>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
