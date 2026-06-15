@@ -103,7 +103,7 @@ export function DashboardPage() {
           </p>
           <h1 className="text-2xl font-bold text-fg">Resumen</h1>
         </div>
-        <Link to="/transactions?new=1">
+        <Link to="/transactions?new=1" className="hidden lg:block">
           <Button leftIcon={<Plus className="h-4 w-4" />}>Nuevo movimiento</Button>
         </Link>
       </div>
