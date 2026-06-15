@@ -199,6 +199,7 @@ export function TransactionsPage() {
         <Button
           leftIcon={<Plus className="h-4 w-4" />}
           onClick={() => { setEditing(null); setInitialType("expense"); setQuickOpen(true); }}
+          className="hidden lg:flex"
         >
           Nuevo
         </Button>
