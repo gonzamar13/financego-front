@@ -3,6 +3,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { ThemeProvider, useTheme } from "@/providers/ThemeProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { PrivacyProvider } from "@/providers/PrivacyProvider";
 import { queryClient } from "@/lib/queryClient";
 import { AppShell } from "@/layouts/AppShell";
 import { AuthLayout } from "@/layouts/AuthLayout";
@@ -27,6 +28,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
+        <PrivacyProvider>
         <BrowserRouter>
           <AuthProvider>
             <Routes>
@@ -63,6 +65,7 @@ export default function App() {
             <ToastHost />
           </AuthProvider>
         </BrowserRouter>
+        </PrivacyProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

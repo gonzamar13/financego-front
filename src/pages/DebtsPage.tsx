@@ -26,7 +26,8 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageSpinner } from "@/components/ui/Spinner";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { formatCurrency, formatPercent } from "@/lib/format";
+import { formatPercent } from "@/lib/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { getApiErrorMessage } from "@/lib/api";
 import {
   useCreateDebt,
@@ -67,6 +68,7 @@ const paymentSchema = z.object({
 type PaymentForm = z.infer<typeof paymentSchema>;
 
 export function DebtsPage() {
+  const fmt = useFormatCurrency();
   const { data: debts, isLoading } = useDebts();
   const { data: summary } = useDebtSummary();
   const create = useCreateDebt();
@@ -115,17 +117,17 @@ export function DebtsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <SummaryCard
           label="Deuda total"
-          value={formatCurrency(summary?.total_remaining ?? 0)}
+          value={fmt(summary?.total_remaining ?? 0)}
           tone="danger"
         />
         <SummaryCard
           label="Capital original"
-          value={formatCurrency(summary?.total_principal ?? 0)}
+          value={fmt(summary?.total_principal ?? 0)}
           tone="brand"
         />
         <SummaryCard
           label="Pagado"
-          value={formatCurrency(summary?.total_paid ?? 0)}
+          value={fmt(summary?.total_paid ?? 0)}
           tone="success"
         />
         <SummaryCard
@@ -287,12 +289,12 @@ function DebtCard({
             Saldo pendiente
           </span>
           <span className={isPaid ? "text-xl font-bold text-success" : "text-xl font-bold text-fg"}>
-            {formatCurrency(debt.remaining_balance)}
+            {fmt(debt.remaining_balance)}
           </span>
         </div>
         <p className="mt-1 text-xs text-fg-subtle">
-          de {formatCurrency(debt.principal_amount)} · pagado{" "}
-          {formatCurrency(debt.total_paid)}
+          de {fmt(debt.principal_amount)} · pagado{" "}
+          {fmt(debt.total_paid)}
         </p>
         <ProgressBar value={debt.progress_percent} tone={progressTone} className="mt-3" />
         <div className="mt-3 flex items-center justify-between text-xs text-fg-muted">
@@ -316,7 +318,7 @@ function DebtCard({
             <Field
               icon={<Receipt className="h-3 w-3" />}
               label="Cuota"
-              value={formatCurrency(debt.installment_amount)}
+              value={fmt(debt.installment_amount)}
             />
           )}
           {debt.interest_rate != null && Number(debt.interest_rate) > 0 && (
@@ -602,7 +604,7 @@ function PaymentModal({ debt, onClose }: { debt: Debt | null; onClose: () => voi
       title={debt ? `Pagos · ${debt.name}` : ""}
       description={
         debt
-          ? `Saldo pendiente: ${formatCurrency(debt.remaining_balance)}`
+          ? `Saldo pendiente: ${fmt(debt.remaining_balance)}`
           : ""
       }
       size="lg"
@@ -657,7 +659,7 @@ function PaymentModal({ debt, onClose }: { debt: Debt | null; onClose: () => voi
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-fg">
-                    {formatCurrency(p.amount)}
+                    {fmt(p.amount)}
                     {p.installment_number ? ` · cuota ${p.installment_number}` : ""}
                   </p>
                   <p className="text-xs text-fg-subtle">

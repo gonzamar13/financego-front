@@ -25,7 +25,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageSpinner } from "@/components/ui/Spinner";
-import { formatCurrency } from "@/lib/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { getApiErrorMessage } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { useAccounts } from "@/hooks/useAccounts";
@@ -55,6 +55,7 @@ export function TransactionsPage() {
   const create = useCreateTransaction();
   const update = useUpdateTransaction();
   const remove = useDeleteTransaction();
+  const fmt = useFormatCurrency();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [quickOpen, setQuickOpen] = useState(false);
@@ -306,7 +307,7 @@ export function TransactionsPage() {
                     }
                   >
                     {isIncome ? "+" : "−"}
-                    {formatCurrency(t.amount)}
+                    {fmt(t.amount)}
                   </span>
                   <div className="flex gap-1">
                     <button

@@ -26,7 +26,8 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageSpinner } from "@/components/ui/Spinner";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { formatCurrency, formatPercent } from "@/lib/format";
+import { formatPercent } from "@/lib/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { getApiErrorMessage } from "@/lib/api";
 import {
   useBudgetAlerts,
@@ -52,6 +53,7 @@ const statusBadge: Record<BudgetStatus, { tone: "success" | "warning" | "danger"
 };
 
 export function BudgetsPage() {
+  const fmt = useFormatCurrency();
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
@@ -190,15 +192,15 @@ export function BudgetsPage() {
           <div className="flex-1 grid grid-cols-3 gap-3 text-center sm:text-left">
             <div>
               <p className="text-xs text-fg-subtle uppercase">Presupuesto</p>
-              <p className="font-semibold text-fg">{formatCurrency(summary.totalBudget)}</p>
+              <p className="font-semibold text-fg">{fmt(summary.totalBudget)}</p>
             </div>
             <div>
               <p className="text-xs text-fg-subtle uppercase">Gastado</p>
-              <p className="font-semibold text-fg">{formatCurrency(summary.totalSpent)}</p>
+              <p className="font-semibold text-fg">{fmt(summary.totalSpent)}</p>
             </div>
             <div>
               <p className="text-xs text-fg-subtle uppercase">Restante</p>
-              <p className="font-semibold text-fg">{formatCurrency(summary.remaining)}</p>
+              <p className="font-semibold text-fg">{fmt(summary.remaining)}</p>
             </div>
           </div>
         </CardBody>
@@ -301,10 +303,10 @@ function BudgetCard({
       <CardBody>
         <div className="flex items-baseline justify-between">
           <span className="text-xs uppercase tracking-wide text-fg-subtle">Gastado</span>
-          <span className="text-xl font-bold text-fg">{formatCurrency(budget.spent)}</span>
+          <span className="text-xl font-bold text-fg">{fmt(budget.spent)}</span>
         </div>
         <p className="mt-1 text-xs text-fg-subtle">
-          de {formatCurrency(budget.amount)}
+          de {fmt(budget.amount)}
         </p>
         <ProgressBar value={budget.progress_percent} tone={tone} className="mt-3" />
         <div className="mt-2 flex items-center justify-between text-xs">
@@ -317,10 +319,10 @@ function BudgetCard({
             {Number(budget.remaining) < 0 ? (
               <>
                 <TrendingUp className="inline h-3 w-3" /> Excedido en{" "}
-                {formatCurrency(Math.abs(Number(budget.remaining)))}
+                {fmt(Math.abs(Number(budget.remaining)))}
               </>
             ) : (
-              <>Quedan {formatCurrency(budget.remaining)}</>
+              <>Quedan {fmt(budget.remaining)}</>
             )}
           </span>
         </div>

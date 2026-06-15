@@ -28,7 +28,8 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageSpinner } from "@/components/ui/Spinner";
 import { Avatar } from "@/components/ui/Avatar";
-import { formatCurrency, formatPercent } from "@/lib/format";
+import { formatPercent } from "@/lib/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { cn } from "@/lib/cn";
 import {
   useAccountBalances,
@@ -45,6 +46,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 export function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const fmt = useFormatCurrency();
   const now = new Date();
   const { data: summary, isLoading: l1 } = useTransactionSummary();
   const { data: balances } = useAccountBalances();
@@ -102,25 +104,25 @@ export function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Balance"
-          value={formatCurrency(summary?.balance ?? 0)}
+          value={fmt(summary?.balance ?? 0)}
           tone="brand"
           hint="Ingresos − gastos"
         />
         <StatCard
           label="Ingresos"
-          value={formatCurrency(summary?.total_income ?? 0)}
+          value={fmt(summary?.total_income ?? 0)}
           tone="success"
           icon={<ArrowDownRight className="h-4 w-4" />}
         />
         <StatCard
           label="Gastos"
-          value={formatCurrency(summary?.total_expense ?? 0)}
+          value={fmt(summary?.total_expense ?? 0)}
           tone="danger"
           icon={<ArrowUpRight className="h-4 w-4" />}
         />
         <StatCard
           label="Deuda total"
-          value={formatCurrency(debtSummary?.total_remaining ?? 0)}
+          value={fmt(debtSummary?.total_remaining ?? 0)}
           tone={Number(debtSummary?.total_remaining ?? 0) > 0 ? "danger" : "brand"}
           hint={
             debtSummary?.overdue_debts
@@ -163,7 +165,7 @@ export function DashboardPage() {
                           }
                         >
                           {formatPercent(a.progress_percent)} ·{" "}
-                          {formatCurrency(a.spent)} / {formatCurrency(a.amount)}
+                          {fmt(a.spent)} / {fmt(a.amount)}
                         </span>
                       </div>
                       <ProgressBar
@@ -195,7 +197,7 @@ export function DashboardPage() {
                   <BarChart data={monthlyData} margin={{ left: -10 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--border))" />
                     <XAxis dataKey="month" stroke="rgb(var(--fg-subtle))" fontSize={12} />
-                    <YAxis stroke="rgb(var(--fg-subtle))" fontSize={12} tickFormatter={(v) => formatCurrency(v, { compact: true })} />
+                    <YAxis stroke="rgb(var(--fg-subtle))" fontSize={12} tickFormatter={(v) => fmt(v, { compact: true })} />
                     <Tooltip
                       contentStyle={{
                         background: "rgb(var(--surface))",
@@ -203,7 +205,7 @@ export function DashboardPage() {
                         borderRadius: 12,
                         color: "rgb(var(--fg))",
                       }}
-                      formatter={(v: number) => formatCurrency(v)}
+                      formatter={(v: number) => fmt(v)}
                     />
                     <Bar dataKey="income" name="Ingresos" fill="#16a34a" radius={[6, 6, 0, 0]} />
                     <Bar dataKey="expense" name="Gastos" fill="#dc2626" radius={[6, 6, 0, 0]} />
@@ -271,14 +273,14 @@ export function DashboardPage() {
                     }
                   />
                   <div className="flex justify-between text-xs text-fg-subtle">
-                    <span>{formatCurrency(b.spent)} gastado</span>
+                    <span>{fmt(b.spent)} gastado</span>
                     <span className={cn(
                       "font-medium",
                       b.status === "exceeded" ? "text-danger"
                       : b.status === "warning" ? "text-warning"
                       : "text-fg-muted"
                     )}>
-                      {formatPercent(b.progress_percent)} de {formatCurrency(b.amount)}
+                      {formatPercent(b.progress_percent)} de {fmt(b.amount)}
                     </span>
                   </div>
                 </button>
@@ -322,11 +324,11 @@ export function DashboardPage() {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-fg truncate">{b.account_name}</p>
                       <p className="text-xs text-fg-subtle">
-                        +{formatCurrency(b.total_income)} · −{formatCurrency(b.total_expense)}
+                        +{fmt(b.total_income)} · −{fmt(b.total_expense)}
                       </p>
                     </div>
                     <span className="text-sm font-semibold text-fg">
-                      {formatCurrency(b.balance)}
+                      {fmt(b.balance)}
                     </span>
                   </li>
                 ))}
@@ -392,7 +394,7 @@ export function DashboardPage() {
                         }
                       >
                         {isIncome ? "+" : "−"}
-                        {formatCurrency(t.amount)}
+                        {fmt(t.amount)}
                       </span>
                     </li>
                   );

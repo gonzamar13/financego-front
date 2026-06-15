@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
-import { formatCurrency } from "@/lib/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { CurrencyInput } from "@/components/ui/CurrencyInput";
 import { getApiErrorMessage } from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -47,6 +47,7 @@ const STRATEGY_LABEL: Record<StrategyType, string> = {
 const BUDGET_KEY = "financego.payoff_budget";
 
 export function PayoffPage() {
+  const fmt = useFormatCurrency();
   const [budget, setBudget] = useState(() => localStorage.getItem(BUDGET_KEY) ?? "");
   const [strategy, setStrategy] = useState<StrategyType>("avalanche");
   const payoff = usePayoffPlan();
@@ -132,7 +133,7 @@ export function PayoffPage() {
                 placeholder="Ej: 500000"
                 hint={
                   result
-                    ? `Saldo disponible calculado: ${formatCurrency(result.suggested_budget)}`
+                    ? `Saldo disponible calculado: ${fmt(result.suggested_budget)}`
                     : "Dejar vacío para calcular automáticamente"
                 }
               />
@@ -198,7 +199,7 @@ export function PayoffPage() {
             />
             <SummaryCard
               label="Interés total"
-              value={formatCurrency(result.total_interest)}
+              value={fmt(result.total_interest)}
               tone="warning"
               icon={<TrendingDown className="h-4 w-4" />}
             />
@@ -229,7 +230,7 @@ export function PayoffPage() {
           <Card>
             <CardHeader
               title="Evolución del saldo total"
-              subtitle={`Presupuesto mensual usado: ${formatCurrency(result.monthly_budget)}`}
+              subtitle={`Presupuesto mensual usado: ${fmt(result.monthly_budget)}`}
             />
             <CardBody>
               <div className="h-64">
@@ -240,7 +241,7 @@ export function PayoffPage() {
                     <YAxis
                       stroke="rgb(var(--fg-subtle))"
                       fontSize={12}
-                      tickFormatter={(v) => formatCurrency(v, { compact: true })}
+                      tickFormatter={(v) => fmt(v, { compact: true })}
                     />
                     <Tooltip
                       contentStyle={{
@@ -249,7 +250,7 @@ export function PayoffPage() {
                         borderRadius: 12,
                         color: "rgb(var(--fg))",
                       }}
-                      formatter={(v: number) => [formatCurrency(v), "Saldo restante"]}
+                      formatter={(v: number) => [fmt(v), "Saldo restante"]}
                     />
                     <Line
                       type="monotone"
@@ -291,7 +292,7 @@ export function PayoffPage() {
                             : "—"}
                         </td>
                         <td className="px-5 py-3 text-right text-fg">
-                          {formatCurrency(d.total_interest)}
+                          {fmt(d.total_interest)}
                         </td>
                         <td className="px-5 py-3 text-right">
                           {d.paid_off_month ? (
@@ -424,13 +425,13 @@ function MonthlyBreakdown({
                     )}
                   </div>
                   <span className="font-semibold text-fg shrink-0 ml-3">
-                    {formatCurrency(p.paid)}
+                    {fmt(p.paid)}
                   </span>
                 </div>
                 <ProgressBar value={pct} tone={isPaidOff ? "success" : "brand"} />
                 <div className="flex justify-between text-xs text-fg-muted mt-1">
                   <span>{pct.toFixed(0)}% del presupuesto</span>
-                  <span>Saldo restante: {formatCurrency(p.remaining)}</span>
+                  <span>Saldo restante: {fmt(p.remaining)}</span>
                 </div>
               </div>
             );
@@ -440,7 +441,7 @@ function MonthlyBreakdown({
           <div className="border-t border-border pt-3 space-y-1.5">
             <div className="flex justify-between text-sm">
               <span className="text-fg-muted">Total destinado a deudas</span>
-              <span className="font-semibold text-fg">{formatCurrency(totalPaid)}</span>
+              <span className="font-semibold text-fg">{fmt(totalPaid)}</span>
             </div>
             {remanente > 0 && (
               <div className="flex justify-between text-sm">
@@ -448,7 +449,7 @@ function MonthlyBreakdown({
                   <Wallet className="h-3.5 w-3.5" />
                   Remanente libre
                 </span>
-                <span className="font-semibold text-success">{formatCurrency(remanente)}</span>
+                <span className="font-semibold text-success">{fmt(remanente)}</span>
               </div>
             )}
           </div>
@@ -503,7 +504,7 @@ function StrategyComparison({
                 <span className="text-sm font-semibold text-fg">{STRATEGY_LABEL[s]}</span>
                 {isCurrent && <Badge tone="brand">Activa</Badge>}
               </div>
-              <p className="text-xl font-bold text-fg">{formatCurrency(res.total_interest)}</p>
+              <p className="text-xl font-bold text-fg">{fmt(res.total_interest)}</p>
               <p className="text-xs text-fg-muted mb-1">en intereses</p>
               <p className="text-sm text-fg-muted">
                 {res.debt_free_date
@@ -522,7 +523,7 @@ function StrategyComparison({
             <p className="text-fg-muted">
               <span className="font-semibold text-fg">{STRATEGY_LABEL[betterStrategy]}</span>{" "}
               te ahorra{" "}
-              <span className="font-semibold text-fg">{formatCurrency(saving)}</span>{" "}
+              <span className="font-semibold text-fg">{fmt(saving)}</span>{" "}
               en intereses
               {monthDiff > 0 && (
                 <>

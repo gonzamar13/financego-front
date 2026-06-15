@@ -20,7 +20,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageSpinner } from "@/components/ui/Spinner";
-import { formatCurrency } from "@/lib/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { getApiErrorMessage } from "@/lib/api";
 import {
   useAccounts,
@@ -70,6 +70,7 @@ const schema = z
 type FormValues = z.infer<typeof schema>;
 
 export function AccountsPage() {
+  const fmt = useFormatCurrency();
   const { data: accounts, isLoading } = useAccounts();
   const { data: balances } = useAccountBalances();
   const create = useCreateAccount();
@@ -151,7 +152,7 @@ export function AccountsPage() {
                       Balance
                     </span>
                     <span className="text-xl font-bold text-fg">
-                      {formatCurrency(bal?.balance ?? 0)}
+                      {fmt(bal?.balance ?? 0)}
                     </span>
                   </div>
                   {acc.account_number && (

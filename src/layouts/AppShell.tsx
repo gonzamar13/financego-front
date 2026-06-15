@@ -15,12 +15,15 @@ import {
   PiggyBank,
   Plus,
   TrendingDown,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/providers/AuthProvider";
 import { useTheme } from "@/providers/ThemeProvider";
+import { usePrivacy } from "@/providers/PrivacyProvider";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { useState } from "react";
@@ -61,6 +64,7 @@ export function AppShell() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { showAmounts, toggle: togglePrivacy } = usePrivacy();
   const [menuOpen, setMenuOpen] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
 
@@ -102,7 +106,17 @@ export function AppShell() {
               </p>
               <p className="text-xs text-fg-subtle truncate">{user?.email}</p>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-1">
+              <button
+                onClick={togglePrivacy}
+                className="rounded-lg p-2 text-fg-muted hover:bg-bg-muted hover:text-fg transition-colors"
+                aria-label={showAmounts ? "Ocultar montos" : "Mostrar montos"}
+                title={showAmounts ? "Ocultar montos" : "Mostrar montos"}
+              >
+                {showAmounts ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              </button>
+              <ThemeToggle />
+            </div>
           </div>
           <Button
             variant="ghost"
@@ -125,7 +139,15 @@ export function AppShell() {
         {/* Topbar mobile */}
         <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-surface/95 backdrop-blur px-4 py-3">
           <Logo />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={togglePrivacy}
+              className="rounded-lg p-2 text-fg-muted hover:bg-bg-muted hover:text-fg transition-colors"
+              aria-label={showAmounts ? "Ocultar montos" : "Mostrar montos"}
+              title={showAmounts ? "Ocultar montos" : "Mostrar montos"}
+            >
+              {showAmounts ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            </button>
             <ThemeToggle />
             <button
               onClick={() => setMenuOpen((v) => !v)}
