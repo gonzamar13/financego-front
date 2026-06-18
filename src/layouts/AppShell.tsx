@@ -234,8 +234,9 @@ export function AppShell() {
               <button
                 onClick={() => setFabOpen((v) => !v)}
                 className={cn(
-                  "h-14 w-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300",
-                  "bg-brand-600 text-white hover:bg-brand-700 active:scale-95"
+                  "h-14 w-14 rounded-full shadow-xl flex items-center justify-center transition-all duration-300",
+                  "bg-brand-600 text-white hover:bg-brand-700 active:scale-95",
+                  "ring-[3px] ring-white/40 dark:ring-white/20"
                 )}
                 aria-label={fabOpen ? "Cerrar" : "Nuevo movimiento"}
               >

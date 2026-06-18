@@ -437,8 +437,8 @@ function StatCard({
             </Badge>
           )}
         </div>
-        <p className="mt-2 text-2xl font-bold text-fg">{value}</p>
-        {hint && <p className="mt-1 text-xs text-fg-subtle">{hint}</p>}
+        <p className="mt-2 text-base sm:text-xl font-bold text-fg truncate leading-tight">{value}</p>
+        {hint && <p className="mt-1 text-xs text-fg-subtle truncate">{hint}</p>}
       </div>
     </Card>
   );
